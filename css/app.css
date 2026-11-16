@@ -185,7 +185,7 @@ textarea.field { height: 80px; padding: 10px 12px; resize: none; }
 .crop-box .tr { right: -12px; top: -12px; } .crop-box .tr::after { right: 6px; top: 6px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
 .crop-box .bl { left: -12px; bottom: -12px; } .crop-box .bl::after { left: 6px; bottom: 6px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
 .crop-box .br { right: -12px; bottom: -12px; } .crop-box .br::after { right: 6px; bottom: 6px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
-.photo-tools { display: flex; gap: 8px; margin-top: 10px; }
+.photo-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .photo-tools .chip { background: var(--card); box-shadow: var(--shadow-s); }
 .picker-zone { height: 300px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 24px; }
 .picker-zone .big { width: 64px; height: 64px; border-radius: 32px; background: var(--peach); color: var(--accent); display: flex; align-items: center; justify-content: center; }

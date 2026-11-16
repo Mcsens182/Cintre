@@ -7,7 +7,7 @@ import { FORMALITY_LABELS, DEFAULT_OCCASIONS } from '../catalog.js';
 import { QUALITY } from '../photo.js';
 import { openCityPicker } from './city.js';
 import { loadDemo } from '../demo.js';
-import { testKey } from '../ai.js';
+import { testKey, providerOf, PROVIDERS } from '../ai.js';
 import { estimate } from '../db.js';
 import { kvSet } from '../db.js';
 
@@ -83,7 +83,7 @@ export default {
       ${driveGroup()}
 
       <div class="group-h">Intelligence artificielle</div>
-      <div class="group"><button type="button" class="row" data-act="ai"><span class="lbl">Reconnaissance des photos<small>${local.aiKey ? 'Activée avec ta clé Claude' : 'Optionnelle, avec une clé API Claude'}</small></span><span class="val">${local.aiKey ? 'Activée' : 'Désactivée'}${chev()}</span></button></div>
+      <div class="group"><button type="button" class="row" data-act="ai"><span class="lbl">Reconnaissance des photos<small>${local.aiKey ? `Activée avec ${PROVIDERS[providerOf(local.aiKey)].label}` : 'Optionnelle, gratuite avec Gemini'}</small></span><span class="val">${local.aiKey ? 'Activée' : 'Désactivée'}${chev()}</span></button></div>
       <p class="group-f">Sans IA, Cintre détecte la couleur et compose avec ses propres règles. Avec, il reconnaît aussi la pièce et comprend des phrases comme « dîner en terrasse ».</p>
 
       <div class="group-h">Données</div>
@@ -216,21 +216,31 @@ function editOccasion(id, done) {
 
 // ---------- Clé IA ----------
 function openAiKey() {
+  const cur = S.getLocal().aiKey || '';
   openSheet({
     title: 'Reconnaissance IA',
     left: { label: 'Annuler' },
     right: (s) => ({ label: 'Enregistrer', act: 'save', busy: s.state.busy }),
-    state: { key: S.getLocal().aiKey || '', busy: false },
-    body: (s) => html`<div class="notice mt8">${icon('sparkle', 18)}<span>Avec une clé API Claude, je reconnais la pièce sur ta photo et je comprends tes phrases. Chaque photo analysée coûte une fraction de centime sur ton compte Anthropic.</span></div>
-      <div class="group mt16"><label class="block"><span class="lbl">Clé API</span><input id="aikey" class="field" type="password" value="${s.state.key}" placeholder="sk-ant-…" data-input="key" autocomplete="off" spellcheck="false"></label></div>
-      <p class="group-f">La clé reste sur ce téléphone. Elle n'est ni synchronisée ni envoyée ailleurs qu'à Anthropic. Crée-la sur console.anthropic.com, rubrique « API Keys ».</p>
-      ${S.getLocal().aiKey ? html`<div class="group mt20"><button type="button" class="row danger" data-act="remove">Désactiver l'IA</button></div>` : ''}`,
+    state: { key: cur, prov: cur ? providerOf(cur) : 'gemini', busy: false },
+    body: (s) => {
+      const p = s.state.prov;
+      return html`<div class="seg mt8" role="group" aria-label="Fournisseur">${Object.entries(PROVIDERS).map(([k, v]) => html`<button type="button" aria-pressed="${p === k}" data-act="prov" data-v="${k}">${v.label} · ${v.hint}</button>`)}</div>
+      ${p === 'gemini'
+        ? html`<div class="notice mt16">${icon('sparkle', 18)}<span>Clé gratuite de Google. Crée-la sur <b style="font-weight:600">aistudio.google.com/apikey</b> avec ton compte Gmail. Le quota gratuit suffit pour quelques pièces par jour. En version gratuite, Google peut utiliser les photos envoyées pour améliorer ses services.</span></div>`
+        : html`<div class="notice mt16">${icon('sparkle', 18)}<span>Clé API Claude, payante à l'usage (une fraction de centime par photo). Crée-la sur <b style="font-weight:600">console.anthropic.com</b>, rubrique « API Keys », après avoir ajouté un peu de crédit.</span></div>`}
+      <div class="group mt16"><label class="block"><span class="lbl">Clé API</span><input id="aikey" class="field" type="password" value="${s.state.key}" placeholder="${PROVIDERS[p].prefix}…" data-input="key" autocomplete="off" spellcheck="false" autocapitalize="off"></label></div>
+      <p class="group-f">La clé reste sur ce téléphone. Elle n'est ni synchronisée sur Drive ni envoyée ailleurs qu'à ${p === 'gemini' ? 'Google' : 'Anthropic'}.</p>
+      ${cur ? html`<div class="group mt20"><button type="button" class="row danger" data-act="remove">Désactiver l'IA</button></div>` : ''}`;
+    },
     actions: {
+      prov(s, el) { s.state.prov = el.dataset.v; s.render(); },
       key(s, el) { s.state.key = el.value.trim(); },
       async save(s) {
-        if (!s.state.key) { s.close(); return; }
+        const key = s.state.key;
+        if (!key) { s.close(); return; }
+        if (providerOf(key) !== s.state.prov) { toast(`Cette clé ressemble à une clé ${PROVIDERS[providerOf(key)].label}.`); s.state.prov = providerOf(key); s.render(); return; }
         s.state.busy = true; s.renderNav();
-        try { await testKey(s.state.key); S.setLocal({ aiKey: s.state.key }); toast('IA activée'); s.close(); }
+        try { await testKey(key); S.setLocal({ aiKey: key }); toast(`IA activée avec ${PROVIDERS[providerOf(key)].label}`); s.close(); }
         catch (e) { toast(e.message || 'Clé refusée'); s.state.busy = false; s.renderNav(); }
       },
       remove(s) { S.setLocal({ aiKey: '' }); toast('IA désactivée'); s.close(); }

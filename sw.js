@@ -1,5 +1,5 @@
 // Service worker : l'app s'ouvre même hors connexion. Les appels Google, météo et IA passent toujours par le réseau.
-const VERSION = 'cintre-v3';
+const VERSION = 'cintre-v4';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './config.js', './css/app.css',
   './js/app.js', './js/ai.js', './js/catalog.js', './js/color.js', './js/db.js', './js/demo.js', './js/drive.js',
