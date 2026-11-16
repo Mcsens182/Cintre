@@ -16,6 +16,8 @@ const LOCAL_DEFAULTS = {
   useLocation: true,
   city: null,         // { name, lat, lon } si position refusée ou désactivée
   aiKey: '',
+  me: null,           // photo en pied pour la cabine : { photoId, w, h, zones, auto, at }
+  tryon: { realistic: true, hfToken: '' },
   drive: { connected: false, folderId: null, folderPath: '', dataFileId: null, lastSync: null, email: '' }
 };
 

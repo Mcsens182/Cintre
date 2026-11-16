@@ -10,6 +10,7 @@ import { loadDemo } from '../demo.js';
 import { testKey, providerOf, PROVIDERS } from '../ai.js';
 import { estimate } from '../db.js';
 import { kvSet } from '../db.js';
+import { openMePhoto } from './fitting.js';
 
 let storage = null;
 const chev = () => html`<span class="chev">${icon('chev', 12, 3)}</span>`;
@@ -52,6 +53,7 @@ export default {
   render() {
     const set = S.settings(); const local = S.getLocal();
     const q = QUALITY[set.quality] || QUALITY.balanced;
+    const tryon = { realistic: true, hfToken: '', ...(local.tryon || {}) };
     return html`<main class="screen">
       <a href="#aujourdhui" style="display:inline-flex;align-items:center;gap:2px;color:var(--accent);text-decoration:none;font-size:17px;min-height:44px;margin-left:-6px">${icon('back', 22, 2.4)}Aujourd'hui</a>
       <h1 class="large-title">Réglages</h1>
@@ -78,6 +80,14 @@ export default {
       <div class="group"><div class="block"><span class="lbl">Qualité d'enregistrement</span>
         <div class="seg">${Object.entries(QUALITY).map(([k, v]) => html`<button type="button" aria-pressed="${set.quality === k}" data-act="quality" data-v="${k}">${v.label}</button>`)}</div></div></div>
       <p class="group-f">${q.label} : ${q.hint}, ${q.max} px de côté au maximum. Les photos déjà ajoutées ne changent pas.</p>
+
+      <div class="group-h">Cabine d'essayage</div>
+      <div class="group">
+        <button type="button" class="row" data-act="mePhoto"><span class="lbl">Ma photo en pied<small>${local.me ? (local.me.auto ? 'Silhouette repérée' : 'Pièces placées approximativement') : 'Pour essayer tes tenues sur toi'}</small></span><span class="val">${local.me ? 'Changer' : 'Ajouter'}${chev()}</span></button>
+        <div class="row"><span class="lbl">Rendu réaliste<small>Gratuit, quota limité par jour</small></span><button type="button" class="switch" role="switch" aria-checked="${tryon.realistic}" aria-label="Rendu réaliste" data-act="realistic"></button></div>
+        <button type="button" class="row" data-act="hfToken"><span class="lbl">Jeton Hugging Face<small>Optionnel, gratuit : plus de rendus par jour</small></span><span class="val">${tryon.hfToken ? 'Ajouté' : 'Aucun'}${chev()}</span></button>
+      </div>
+      <p class="group-f">Le rendu réaliste passe par des modèles d'essayage gratuits hébergés sur Hugging Face : ta photo et celles des pièces y sont envoyées. Les chaussures restent en aperçu. Sans connexion, la cabine affiche l'aperçu.</p>
 
       <div class="group-h">Sauvegarde</div>
       ${driveGroup()}
@@ -125,6 +135,12 @@ export default {
       if (await confirmDialog({ title: 'Se déconnecter de Drive ?', text: 'Tes données restent sur ce téléphone et dans ton Drive.', ok: 'Déconnecter' })) Drive.disconnect();
     },
     ai() { openAiKey(); },
+    mePhoto() { openMePhoto(); },
+    realistic() {
+      const t = { realistic: true, hfToken: '', ...(S.getLocal().tryon || {}) };
+      S.setLocal({ tryon: { ...t, realistic: !t.realistic } });
+    },
+    hfToken() { openHfToken(); },
     export() {
       const blob = new Blob([JSON.stringify({ app: 'cintre', at: new Date().toISOString(), data: S.getData() }, null, 1)], { type: 'application/json' });
       const a = document.createElement('a');
@@ -244,6 +260,32 @@ function openAiKey() {
         catch (e) { toast(e.message || 'Clé refusée'); s.state.busy = false; s.renderNav(); }
       },
       remove(s) { S.setLocal({ aiKey: '' }); toast('IA désactivée'); s.close(); }
+    }
+  });
+}
+
+// ---------- Jeton Hugging Face (cabine, rendu réaliste) ----------
+function openHfToken() {
+  const t = { realistic: true, hfToken: '', ...(S.getLocal().tryon || {}) };
+  openSheet({
+    title: 'Jeton Hugging Face',
+    state: { token: t.hfToken },
+    left: { label: 'Annuler' },
+    right: { act: 'save', label: 'OK' },
+    body: (s) => html`<div class="notice mt8">${icon('sparkle', 18)}<span>Sans jeton, les rendus réalistes utilisent un petit quota gratuit anonyme. Avec un compte Hugging Face gratuit, le quota est plus large : crée le jeton sur <b style="font-weight:600">huggingface.co › Settings › Access Tokens</b>, type « Read ».</span></div>
+      <div class="group mt16"><label class="block"><span class="lbl">Jeton</span><input id="hftok" class="field" type="password" value="${s.state.token}" placeholder="hf_…" data-input="tok" autocomplete="off" spellcheck="false" autocapitalize="off"></label></div>
+      <p class="group-f">Le jeton reste sur ce téléphone et n'est envoyé qu'à Hugging Face.</p>
+      ${t.hfToken ? html`<div class="group mt20"><button type="button" class="row danger" data-act="remove">Retirer le jeton</button></div>` : ''}`,
+    actions: {
+      tok(s, el) { s.state.token = el.value.trim(); },
+      save(s) {
+        const tok = s.state.token;
+        if (tok && !tok.startsWith('hf_')) { toast('Un jeton commence par « hf_ »'); return; }
+        S.setLocal({ tryon: { ...t, hfToken: tok } });
+        toast(tok ? 'Jeton enregistré' : 'Jeton retiré');
+        s.close();
+      },
+      remove(s) { S.setLocal({ tryon: { ...t, hfToken: '' } }); toast('Jeton retiré'); s.close(); }
     }
   });
 }

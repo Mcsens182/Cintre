@@ -11,6 +11,7 @@ import { openCityPicker } from './city.js';
 import { openItemDetail, openAddItem } from './item.js';
 import { loadDemo } from '../demo.js';
 import { openSaveOutfit } from './outfits.js';
+import { openFitting } from './fitting.js';
 
 const SLOT_SHOW = ['outer', 'top', 'bottom', 'shoes', 'acc'];
 
@@ -132,7 +133,8 @@ function outfitCard() {
     <div class="card-h"><h2>Pour aujourd'hui</h2><span>Touche pour échanger</span></div>
     <div class="outfit-grid">${SLOT_SHOW.filter((s) => r.pieces[s]).map((s) => tile(s, r.pieces[s]))}</div>
     <p class="why">${whySentence(r, st.wx.data, occ)}</p>
-    <button type="button" class="btn btn-primary mt12" data-act="wear">Porter cette tenue</button>
+    <button type="button" class="btn btn-soft mt12" data-act="fit">${icon('sparkle', 18, 2)}Essayer sur moi</button>
+    <button type="button" class="btn btn-primary mt8" data-act="wear">Porter cette tenue</button>
     <div style="display:flex;gap:8px;margin-top:4px">
       <button type="button" class="btn btn-text" data-act="another">${icon('refresh', 18, 2)}Autre proposition</button>
       <button type="button" class="btn btn-text" data-act="save">${icon('heart', 18, 2)}Enregistrer</button>
@@ -226,6 +228,20 @@ export default {
       S.notify();
     },
     another() { compute(); S.notify(); },
+    fit() {
+      const p = st.res?.pieces; if (!p) return;
+      openFitting({
+        pieces: p, occasionId: st.occ,
+        // ce qui a été choisi dans la cabine devient la proposition du jour
+        onClose(next) {
+          if (!st.res?.pieces || !Object.keys(next).length) return;
+          if (signature(next) === signature(st.res.pieces)) return;
+          st.res = { ...st.res, pieces: next, sig: signature(next) };
+          st.shown.add(st.res.sig);
+          S.notify();
+        }
+      });
+    },
     wear() {
       const p = st.res?.pieces; if (!p) return;
       S.wearToday(Object.values(p).map((x) => x.id), st.occ);

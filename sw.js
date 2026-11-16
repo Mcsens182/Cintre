@@ -1,10 +1,10 @@
 // Service worker : l'app s'ouvre même hors connexion. Les appels Google, météo et IA passent toujours par le réseau.
-const VERSION = 'cintre-v5';
+const VERSION = 'cintre-v6';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './config.js', './css/app.css',
   './js/app.js', './js/ai.js', './js/catalog.js', './js/color.js', './js/db.js', './js/demo.js', './js/drive.js',
-  './js/engine.js', './js/intent.js', './js/photo.js', './js/store.js', './js/ui.js', './js/util.js', './js/weather.js',
-  './js/screens/city.js', './js/screens/item.js', './js/screens/outfits.js', './js/screens/settings.js',
+  './js/engine.js', './js/intent.js', './js/photo.js', './js/pose.js', './js/tryon.js', './js/store.js', './js/ui.js', './js/util.js', './js/weather.js',
+  './js/screens/city.js', './js/screens/fitting.js', './js/screens/item.js', './js/screens/outfits.js', './js/screens/settings.js',
   './js/screens/today.js', './js/screens/wardrobe.js', './js/screens/welcome.js',
   './icons/favicon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
 ];
