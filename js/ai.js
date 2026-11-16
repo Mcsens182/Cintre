@@ -4,7 +4,7 @@
 import { CATEGORIES, COLORS } from './catalog.js';
 
 export const PROVIDERS = {
-  gemini: { label: 'Gemini', hint: 'Gratuit', prefix: 'AIza', where: 'aistudio.google.com/apikey' },
+  gemini: { label: 'Gemini', hint: 'Gratuit', prefix: 'AQ.', where: 'aistudio.google.com/apikey' },
   claude: { label: 'Claude', hint: 'Payant à l\'usage', prefix: 'sk-ant-', where: 'console.anthropic.com' }
 };
 
@@ -33,6 +33,7 @@ async function gemini(key, parts) {
       const text = (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
       return parseJson(text);
     }
+    if (r.status === 401) throw new Error('Google refuse cette clé (401). Recrée-en une sur aistudio.google.com/apikey');
     if (r.status === 400 || r.status === 403) {
       const t = await r.text().catch(() => '');
       throw new Error(/API key not valid|API_KEY_INVALID/i.test(t) ? 'Clé Gemini refusée' : 'Clé Gemini non autorisée pour ce site');
